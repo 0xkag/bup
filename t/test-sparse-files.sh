@@ -22,6 +22,7 @@ block_size=$(bup-python -c \
   "import os; print(getattr(os.stat('.'), 'st_blksize', 0)) or $mb * 3") \
     || exit $?
 data_size=$((block_size * 10))
+restore_path="src/latest/$(realpath $(pwd))/"
 readonly block_size data_size
 
 WVPASS dd if=/dev/zero of=test-sparse-probe seek="$data_size" bs=1 count=1
@@ -41,21 +42,21 @@ WVPASS bup index src
 WVPASS bup save -n src src
 
 WVSTART "sparse file restore (all sparse)"
-WVPASS bup restore -C restore "src/latest/$(pwd)/"
+WVPASS bup restore -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -ge "$((data_size / 1024))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
 
 WVSTART "sparse file restore --no-sparse (all sparse)"
 WVPASS rm -r restore
-WVPASS bup restore --no-sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --no-sparse -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -ge "$((data_size / 1024))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
 
 WVSTART "sparse file restore --sparse (all sparse)"
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -le "$((3 * (block_size / 1024)))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
@@ -66,7 +67,7 @@ WVPASS dd if=/dev/zero of=src/foo seek="$data_size" bs=1 count=1 conv=notrunc
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -le "$((3 * (block_size / 1024)))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
@@ -76,7 +77,7 @@ WVPASS echo "end" >> src/foo
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -le "$((5 * (block_size / 1024)))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
@@ -88,7 +89,7 @@ WVPASS echo 'y' >> src/foo
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
 
 WVSTART "sparse file restore --sparse (sparse start)"
@@ -97,7 +98,7 @@ WVPASS echo "end" >> src/foo
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -le "$((5 * (block_size / 1024)))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
@@ -109,7 +110,7 @@ WVPASS dd if=/dev/zero of=src/foo seek=$((2 * data_size)) bs=1 count=1 conv=notr
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 restore_size=$(WVPASS du -k -s restore/src/foo | WVPASS cut -f1) || exit $?
 WVPASS [ "$restore_size" -le "$((5 * (block_size / 1024)))" ]
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
@@ -124,7 +125,7 @@ WVPASS bup random --seed "$RANDOM" 1M > src/foo
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
 
 WVSTART "sparse file restore --sparse (random sparse regions)"
@@ -138,7 +139,7 @@ done
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
 
 WVSTART "sparse file restore --sparse (short zero runs around boundary)"
@@ -153,7 +154,7 @@ EOF
 WVPASS bup index src
 WVPASS bup save -n src src
 WVPASS rm -r restore
-WVPASS bup restore --sparse -C restore "src/latest/$(pwd)/"
+WVPASS bup restore --sparse -C restore "$restore_path"
 WVPASS "$top/t/compare-trees" -c src/ restore/src/
 
 
